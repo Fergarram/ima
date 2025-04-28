@@ -1,5 +1,5 @@
 //
-// IMA (今) 0.1.0
+// IMA (今) 0.1.1
 // by fergarram
 //
 
@@ -17,15 +17,21 @@
 // Core Types
 //
 
+export type Child = HTMLElement | Node | null | undefined | string | boolean | number | Function;
+
 export type Props = {
 	is?: string;
 	[key: string]: any;
 };
 
-export type TagFunction = (
-	props?: Props | string | number | null | undefined | boolean | HTMLElement | Node | Function,
-	...children: (HTMLElement | Node | null | undefined | string | boolean | number | Function)[]
-) => HTMLElement;
+// Define TagArgs to properly handle the overloaded parameter patterns
+export type TagArgs =
+	| [] // No arguments
+	| [Props] // Just props
+	| [Child, ...Child[]] // First child followed by more children
+	| [Props, ...Child[]]; // Props followed by children
+
+export type TagFunction = (...args: TagArgs) => HTMLElement;
 
 export type TagsProxy = {
 	[key: string]: TagFunction;
