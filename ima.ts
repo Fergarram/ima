@@ -90,7 +90,7 @@ const tag_generator =
 			}
 		}
 
-		// Create the element (with namespace if needed)
+		// Create the element
 		const element = document.createElement(name);
 
 		// Handle props/attributes
