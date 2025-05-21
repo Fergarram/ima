@@ -33,6 +33,11 @@ const app = div(
 document.body.appendChild(app);
 ```
 
+## TODO
+
+- [ ] Add examples for SSR/SSG, page routing, modal, select, etc.
+- [ ] Minimize further like van.js
+
 ## License
 
 MIT
