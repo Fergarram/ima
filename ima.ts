@@ -1,5 +1,5 @@
 //
-// IMA (今) 0.2.0
+// IMA (今) 0.2.1
 // by fergarram
 //
 
@@ -63,7 +63,7 @@ if (typeof window === "undefined") {
 	console.warn("Trying to use client-side tags on server.");
 }
 
-export const tag_generator =
+const tag_generator =
 	(_: any, name: string): TagFunction =>
 	(...args: any[]): HTMLElement => {
 		let props_obj: Props = {};
@@ -104,7 +104,7 @@ export const tag_generator =
 
 			// Reactive attributes (functions that don't start with "on")
 			if (typeof value === "function" && !attr_key.startsWith("on")) {
-				setup_reactive_attr(element, attr_key, value);
+				setupReactiveAttr(element, attr_key, value);
 				continue;
 			}
 
@@ -123,7 +123,7 @@ export const tag_generator =
 					element.appendChild(child);
 				} else if (typeof child === "function") {
 					// Handle reactive child
-					const reactive_node = setup_reactive_node(child);
+					const reactive_node = setupReactiveNode(child);
 					element.appendChild(reactive_node);
 				} else {
 					element.appendChild(document.createTextNode(String(child)));
@@ -140,30 +140,30 @@ export const tags: TagsProxy = new Proxy({}, { get: tag_generator });
 // Reactive System
 //
 
-// SOA (Structure of Arrays) for reactive nodes
+// Reactive nodes
 const reactive_markers: Comment[] = [];
 const reactive_callbacks: Array<() => any> = [];
 const reactive_prev_values: Array<Node | string | null> = [];
-const reactive_count = { value: 0 };
+let reactive_count = 0;
 
-// SOA for reactive attributes
+// Reactive attributes
 const reactive_attr_elements: HTMLElement[] = [];
 const reactive_attr_names: string[] = [];
 const reactive_attr_callbacks: Array<() => any> = [];
 const reactive_attr_prev_values: any[] = [];
-const reactive_attr_count = { value: 0 };
+let reactive_attr_count = 0;
 
 let animation_frame_requested = false;
 let frame_time = 0;
 
-function update_reactive_components() {
+function updateReactiveComponents() {
 	animation_frame_requested = false;
 
 	// Start timing the update
 	const start_time = performance.now();
 
 	// Update reactive attributes
-	for (let i = 0; i < reactive_attr_count.value; i++) {
+	for (let i = 0; i < reactive_attr_count; i++) {
 		const element = reactive_attr_elements[i];
 		const attr_name = reactive_attr_names[i];
 		const callback = reactive_attr_callbacks[i];
@@ -176,8 +176,10 @@ function update_reactive_components() {
 		// Only update if value changed
 		if (new_value !== reactive_attr_prev_values[i]) {
 			if (new_value === true) {
-				element.setAttribute(attr_name, "");
-			} else if (new_value === false || new_value == null) {
+				element.setAttribute(attr_name, "true");
+			} else if (new_value === false) {
+				element.setAttribute(attr_name, "false");
+			} else if (new_value === null || new_value === undefined) {
 				element.removeAttribute(attr_name);
 			} else {
 				element.setAttribute(attr_name, String(new_value));
@@ -188,7 +190,7 @@ function update_reactive_components() {
 	}
 
 	// Update reactive nodes
-	for (let i = 0; i < reactive_count.value; i++) {
+	for (let i = 0; i < reactive_count; i++) {
 		const marker = reactive_markers[i];
 		const callback = reactive_callbacks[i];
 
@@ -242,8 +244,8 @@ function update_reactive_components() {
 	frame_time = performance.now() - start_time;
 
 	// Schedule next update if we have reactive items
-	if (reactive_count.value > 0 || reactive_attr_count.value > 0) {
-		animation_frame();
+	if (reactive_count > 0 || reactive_attr_count > 0) {
+		animationFrame();
 	}
 }
 
@@ -251,15 +253,15 @@ export function getFrameTime() {
 	return frame_time;
 }
 
-function animation_frame() {
-	if (!animation_frame_requested && (reactive_count.value > 0 || reactive_attr_count.value > 0)) {
+function animationFrame() {
+	if (!animation_frame_requested && (reactive_count > 0 || reactive_attr_count > 0)) {
 		animation_frame_requested = true;
-		requestAnimationFrame(update_reactive_components);
+		requestAnimationFrame(updateReactiveComponents);
 	}
 }
 
-function setup_reactive_node(callback: () => any): Node {
-	const node_index = reactive_count.value++;
+function setupReactiveNode(callback: () => any): Node {
+	const node_index = reactive_count++;
 
 	// Create a marker comment node
 	const marker = document.createComment(`reactive-${node_index}`);
@@ -287,13 +289,13 @@ function setup_reactive_node(callback: () => any): Node {
 	reactive_prev_values[node_index] = initial_node;
 
 	// Start the animation frame loop
-	animation_frame();
+	animationFrame();
 
 	return fragment;
 }
 
-function setup_reactive_attr(element: HTMLElement, attr_name: string, callback: () => any) {
-	const attr_index = reactive_attr_count.value++;
+function setupReactiveAttr(element: HTMLElement, attr_name: string, callback: () => any) {
+	const attr_index = reactive_attr_count++;
 
 	// Initialize with current value
 	const initial_value = callback();
@@ -312,14 +314,14 @@ function setup_reactive_attr(element: HTMLElement, attr_name: string, callback: 
 	reactive_attr_prev_values[attr_index] = initial_value;
 
 	// Start the animation frame loop
-	animation_frame();
+	animationFrame();
 }
 
 //
 // Static Generation
 //
 
-export const static_tag_generator =
+const static_tag_generator =
 	(_: any, name: string) =>
 	(...args: any[]): string => {
 		let props_obj: Props = {};
