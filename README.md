@@ -35,9 +35,8 @@ const app = div(
 		{
 			onclick: () => count++,
 		},
-		"Increment ",
 		// Reactive text child
-		() => count,
+		() => `Increment ${count + 1}`,
 	),
 );
 
