@@ -20,16 +20,6 @@ const { div, button, span, h1 } = useTags();
 let count = 0; // just regular JavaScript variables
 
 const app = div(
-	{
-		style: `
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			height: 100vh;
-			background-color: #f0f0f0;
-		`
-	},
 	h1(
 		{
 			// Reactive attribute
@@ -43,6 +33,7 @@ const app = div(
 	),
 	button(
 		{
+			class: "button-class-or-tailwind-or-whatever",
 			onclick: () => count++,
 		},
 		// Reactive text child
