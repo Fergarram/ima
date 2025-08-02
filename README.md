@@ -17,18 +17,27 @@ IMA (今, meaning "now" in Japanese) is a lightweight, immediate-mode inspired U
 import { useTags } from "ima";
 const { div, button, h1 } = useTags();
 
-// State - just regular JavaScript variables
-let count = 0;
+let count = 0; // just regular JavaScript variables
 
-// Create UI
 const app = div(
-	h1("Counter Example"),
-	div({ class: "counter" }, () => count), // Reactive element
+	h1(
+		{
+			// Reactive attribute
+			style: () => `
+				font-size: ${count}rem
+			`,
+		},
+		"Counter Example",
+	),
+	// Reactive element
+	() => div({ class: "counter" }, count),
 	button(
 		{
 			onclick: () => count++,
 		},
-		"Increment",
+		"Increment ",
+		// Reactive text child
+		() => count,
 	),
 );
 
