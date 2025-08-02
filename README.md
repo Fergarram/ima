@@ -14,7 +14,7 @@ IMA (今, meaning "now" in Japanese) is a lightweight, immediate-mode inspired U
 ## Usage Example
 
 ```js
-import { useTags } from "@/lib/ima";
+import { useTags } from "ima";
 const { div, button, span, h1 } = useTags();
 
 let count = 0; // just regular JavaScript variables
