@@ -6,7 +6,7 @@ IMA (今, meaning "now" in Japanese) is a lightweight, immediate-mode inspired U
 
 - **Minimal API**: A single function for all tags
 - **No State Management Management**: No special hooks, stores or libraries - just use JavaScript primitives
-- **Per-frame Reactivity**: Automatically updates only what changes
+- **Built-in Reactivity**: Callbacks as a reactive building block
 - **No Virtual DOM**: Direct DOM manipulation
 - **Tiny Footprint**: ~4kb and no dependencies
 - **Static HTML Generation**: Run on edge functions or on any JS runtime
