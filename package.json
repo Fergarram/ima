@@ -1,0 +1,14 @@
+{
+  "name": "ima",
+  "author": "Fernando Garcia (fergarram)",
+  "version": "0.8.0",
+  "description": "A tiny immediate-mode inspired UI rendering engine.",
+  "module": "ima.js",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
