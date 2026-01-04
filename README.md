@@ -11,45 +11,87 @@ IMA (今, meaning "now" in Japanese) is a lightweight, immediate-mode inspired U
 - **Tiny Footprint**: ~4kb and no dependencies
 - **Static HTML Generation**: Run on edge functions or on any JS runtime
 
+## Install
+
+```bash
+npm install @fergarram/ima
+```
+
 ## Usage Example
 
 ```js
-import { useTags } from "ima";
+import { useTags } from "@fergarram/ima";
 const { div, button, span, h1 } = useTags();
 
 let count = 0; // just regular JavaScript variables
 
 const app = div(
-	h1(
-		{
-			// Reactive attribute
-			style: () => `
-				transition: font-size 100ms;
-				font-size: ${count + 1}rem;
-			`,
-		},
-		// Reactive element
-		() => span(count + 1, "x"),
-	),
-	button(
-		{
-			class: "button-class-or-tailwind-or-whatever",
-			onclick: () => count++,
-		},
-		// Reactive text child
-		() => `Get to ${count + 2}x`,
-	),
+    h1(
+        {
+            // Reactive attribute
+            style: () => `
+                transition: font-size 100ms;
+                font-size: ${count + 1}rem;
+            `,
+        },
+        // Reactive element
+        () => span(count + 1, "x"),
+    ),
+    button(
+        {
+            class: "button-class-or-tailwind-or-whatever",
+            onclick: () => count++,
+        },
+        // Reactive text child
+        () => `Get to ${count + 2}x`,
+    ),
 );
 
 // Add to DOM
 document.body.appendChild(app);
-
 ```
 
-## TODO
+If you want to import via short unscoped package name:
 
-- [ ] Add examples for SSR/SSG, page routing, modal, select, etc.
-- [ ] Minimize further like van.js
+```js
+import { useTags } from "ima";
+```
+
+you can override in your tsconfig.json:
+
+```json
+{
+    "compilerOptions": {
+        "paths": {
+            "ima": ["@fergarram/ima"]
+        }
+    }
+}
+```
+
+Vite (vite.config.js):
+
+```javascript
+export default {
+    resolve: {
+        alias: {
+            ima: "@fergarram/ima",
+        },
+    },
+};
+```
+
+Webpack (webpack.config.js):
+
+```javascript
+module.exports = {
+    resolve: {
+        alias: {
+            ima: "@fergarram/ima",
+        },
+    },
+};
+```
 
 ## License
 

@@ -14,17 +14,90 @@
 // — Static Generation
 
 //
+// Type Definitions
+//
+
+/**
+ * @typedef {Object} TagOptions
+ * @property {string} [namespace] - XML namespace for elements (e.g., SVG namespace)
+ * @property {Document} [iframe_document] - Document to use for creating elements
+ * @property {(name: string, value: any) => { name: string, value: any }} [attr] - Custom attribute processor
+ */
+
+/**
+ * @typedef {Object} Ref
+ * @property {Element|null} current - Reference to the DOM element
+ */
+
+/**
+ * @typedef {Object} ParsedTagArgs
+ * @property {Record<string, any>} props - Element attributes/properties
+ * @property {any[]} children - Child elements or content
+ * @property {Ref} [ref] - Optional ref object
+ * @property {string | (() => string)} [innerHTML] - Optional innerHTML content
+ */
+
+/**
+ * @typedef {(...args: any[]) => HTMLElement | Element} TagFunction
+ */
+
+/**
+ * @typedef {(...args: any[]) => string} StaticTagFunction
+ */
+
+/**
+ * @typedef {Record<string, TagFunction>} TagProxy
+ */
+
+/**
+ * @typedef {Record<string, StaticTagFunction>} StaticTagProxy
+ */
+
+//
 // Tag Generation
 //
 
+/**
+ * Creates a proxy object for generating static HTML strings.
+ * Used for server-side rendering.
+ *
+ * @returns {StaticTagProxy} Proxy that generates HTML strings for any tag name
+ *
+ * @example
+ * const h = useStaticTags();
+ * const html = h.div({ class: "container" }, h.p("Hello"));
+ * // Returns: '<div class="container"><p>Hello</p></div>'
+ */
 export function useStaticTags() {
 	return new Proxy({}, { get: staticTagGenerator });
 }
 
+/**
+ * Creates a proxy object for generating DOM elements or static HTML strings.
+ * Automatically detects environment and returns appropriate generator.
+ *
+ * @param {TagOptions|string} [options] - Configuration options or namespace string
+ * @returns {TagProxy|StaticTagProxy} Proxy that generates elements or HTML strings
+ *
+ * @example
+ * // Basic usage
+ * const h = useTags();
+ * const el = h.div({ class: "container" }, h.p("Hello"));
+ *
+ * @example
+ * // With SVG namespace
+ * const svg = useTags({ namespace: "http://www.w3.org/2000/svg" });
+ * const circle = svg.circle({ cx: 50, cy: 50, r: 40 });
+ *
+ * @example
+ * // With iframe document
+ * const h = useTags({ iframe_document: iframe.contentDocument });
+ */
 export function useTags(options) {
 	const is_static = typeof window === "undefined";
 
 	// Handle backward compatibility - if options is a string, treat it as namespace
+	/** @type {TagOptions} */
 	const resolved_options = typeof options === "string" ? { namespace: options } : options || {};
 
 	if (is_static) {
@@ -48,17 +121,40 @@ if (typeof window === "undefined") {
 	// of the reactive functions to prevent errors
 	const warn = () => console.warn("Trying to use client-side tags on server.");
 	globalThis.document = {
+		// @ts-expect-error
 		createElement: warn,
+		// @ts-expect-error
 		createTextNode: warn,
+		// @ts-expect-error
 		createComment: warn,
+		// @ts-expect-error
 		createElementNS: warn,
 	};
 }
 
+/**
+ * Parses tag function arguments into props, children, ref, and innerHTML.
+ *
+ * @param {any[]} args - Arguments passed to a tag function
+ * @returns {ParsedTagArgs} Parsed arguments object
+ *
+ * @example
+ * // Props object as first arg
+ * parseTagArgs([{ class: "foo" }, "child"])
+ * // Returns: { props: { class: "foo" }, children: ["child"], ref: undefined, innerHTML: undefined }
+ *
+ * @example
+ * // All children
+ * parseTagArgs(["child1", "child2"])
+ * // Returns: { props: {}, children: ["child1", "child2"], ref: undefined, innerHTML: undefined }
+ */
 export function parseTagArgs(args) {
+	/** @type {Record<string, any>} */
 	let props = {};
 	let children = args;
+	/** @type {Ref|undefined} */
 	let ref;
+	/** @type {string|undefined} */
 	let innerHTML;
 
 	if (args.length > 0) {
@@ -87,6 +183,14 @@ export function parseTagArgs(args) {
 	return { props, children, ref, innerHTML };
 }
 
+/**
+ * Creates a tag function for generating DOM elements.
+ *
+ * @param {object} _ - Unused proxy target
+ * @param {string} tag - HTML tag name
+ * @param {TagOptions} options - Configuration options
+ * @returns {(...args: any[]) => Element} Function that creates DOM elements
+ */
 export function tagGenerator(_, tag, options) {
 	return (...args) => {
 		const { props, children, ref, innerHTML } = parseTagArgs(args);
@@ -94,7 +198,9 @@ export function tagGenerator(_, tag, options) {
 		// Get the document to use - either from options or global
 		const doc = options?.iframe_document || document;
 
-		const element = options?.namespace ? doc.createElementNS(options.namespace, tag) : doc.createElement(tag);
+		const element = options?.namespace
+			? doc.createElementNS(options.namespace, tag)
+			: doc.createElement(tag);
 
 		if (ref) {
 			ref.current = element;
@@ -161,19 +267,30 @@ export function tagGenerator(_, tag, options) {
 //
 
 // Reactive nodes
+/** @type {(Comment|null)[]} */
 const reactive_markers = [];
+/** @type {(Function|null)[]} */
 const reactive_callbacks = [];
+/** @type {(Node|null)[]} */
 const reactive_prev_values = [];
+/** @type {number} */
 let reactive_node_count = 0;
 
 // Reactive attributes
+/** @type {(Element|null)[]} */
 const reactive_attr_elements = [];
+/** @type {(string|null)[]} */
 const reactive_attr_names = [];
+/** @type {(Function|null)[]} */
 const reactive_attr_callbacks = [];
+/** @type {any[]} */
 const reactive_attr_prev_values = [];
+/** @type {number} */
 let reactive_attr_count = 0;
 
+/** @type {number} */
 let frame_time = 0;
+/** @type {number} */
 let cleanup_counter = 0;
 
 // Start the frame loop immediately
@@ -181,6 +298,12 @@ if (typeof window !== "undefined") {
 	requestAnimationFrame(updateReactiveComponents);
 }
 
+/**
+ * Main update loop that runs every animation frame.
+ * Updates all reactive attributes and nodes that have changed.
+ *
+ * @returns {void}
+ */
 function updateReactiveComponents() {
 	// Start timing the update
 	const start_time = performance.now();
@@ -265,6 +388,7 @@ function updateReactiveComponents() {
 
 		// Only update DOM if needed
 		if (needs_update) {
+			/** @type {Node} */
 			let new_node;
 
 			if (new_value instanceof Node) {
@@ -295,6 +419,12 @@ function updateReactiveComponents() {
 	requestAnimationFrame(updateReactiveComponents);
 }
 
+/**
+ * Removes disconnected reactive nodes and attributes from tracking arrays.
+ * Compacts the arrays to avoid sparse entries.
+ *
+ * @returns {void}
+ */
 // @NOTE: Me construido aquello que he jurado destruir... un garbage collector! D:
 function cleanupDisconnectedReactives() {
 	// Cleanup reactive nodes
@@ -353,10 +483,28 @@ function cleanupDisconnectedReactives() {
 	reactive_attr_count = write_index;
 }
 
+/**
+ * Returns the time in milliseconds spent updating reactive components
+ * in the last animation frame.
+ *
+ * @returns {number} Frame time in milliseconds
+ *
+ * @example
+ * setInterval(() => {
+ *     console.log(`Last frame: ${getFrameTime().toFixed(2)}ms`);
+ * }, 1000);
+ */
 export function getFrameTime() {
 	return frame_time;
 }
 
+/**
+ * Sets up a reactive node that updates when its callback returns a new value.
+ *
+ * @param {() => Node|string|number|null|undefined} callback - Function that returns the node content
+ * @param {Document} doc - Document to use for creating nodes
+ * @returns {DocumentFragment} Fragment containing the initial node and marker
+ */
 function setupReactiveNode(callback, doc) {
 	const node_index = reactive_node_count++;
 
@@ -367,6 +515,7 @@ function setupReactiveNode(callback, doc) {
 	const initial_value = callback();
 
 	// Create the initial node
+	/** @type {Node} */
 	let initial_node;
 
 	if (initial_value instanceof Node) {
@@ -388,6 +537,14 @@ function setupReactiveNode(callback, doc) {
 	return fragment;
 }
 
+/**
+ * Sets up a reactive attribute that updates when its callback returns a new value.
+ *
+ * @param {Element} element - Element to set the attribute on
+ * @param {string} attr_name - Name of the attribute
+ * @param {() => any} callback - Function that returns the attribute value
+ * @returns {void}
+ */
 function setupReactiveAttr(element, attr_name, callback) {
 	const attr_index = reactive_attr_count++;
 
@@ -415,6 +572,7 @@ function setupReactiveAttr(element, attr_name, callback) {
 //
 
 // Void elements that are self-closing
+/** @type {Set<string>} */
 const VOID_ELEMENTS = new Set([
 	"area",
 	"base",
@@ -432,6 +590,16 @@ const VOID_ELEMENTS = new Set([
 	"wbr",
 ]);
 
+/**
+ * Escapes HTML special characters in a string.
+ *
+ * @param {string} value - String to escape
+ * @returns {string} Escaped string safe for HTML attribute values
+ *
+ * @example
+ * escapeHtml('<script>alert("xss")</script>')
+ * // Returns: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+ */
 export function escapeHtml(value) {
 	return value
 		.replace(/&/g, "&amp;")
@@ -441,6 +609,16 @@ export function escapeHtml(value) {
 		.replace(/>/g, "&gt;");
 }
 
+/**
+ * Builds an HTML attribute string from a props object.
+ *
+ * @param {Record<string, any>} props - Object containing attribute key-value pairs
+ * @returns {string} HTML attribute string (with leading space if non-empty)
+ *
+ * @example
+ * buildAttributesHtml({ class: "foo", disabled: true, hidden: false })
+ * // Returns: ' class="foo" disabled'
+ */
 export function buildAttributesHtml(props) {
 	let html = "";
 
@@ -460,6 +638,13 @@ export function buildAttributesHtml(props) {
 	return html;
 }
 
+/**
+ * Creates a static tag function for generating HTML strings.
+ *
+ * @param {object} _ - Unused proxy target
+ * @param {string} tag - HTML tag name
+ * @returns {StaticTagFunction} Function that creates HTML strings
+ */
 function staticTagGenerator(_, tag) {
 	return (...args) => {
 		const { props, children, innerHTML } = parseTagArgs(args);
